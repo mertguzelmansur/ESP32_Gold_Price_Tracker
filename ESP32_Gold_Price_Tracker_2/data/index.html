@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Price Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #ffd700;
+            --secondary-color: #2c3e50;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .container {
+            max-width: 800px;
+            padding: 2rem;
+        }
+        
+        .page-title {
+            color: var(--secondary-color);
+            font-weight: 600;
+            margin-bottom: 2rem;
+            text-align: center;
+            position: relative;
+        }
+        
+        .page-title:after {
+            content: '';
+            display: block;
+            width: 50px;
+            height: 3px;
+            background: var(--primary-color);
+            margin: 10px auto;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background: linear-gradient(45deg, var(--secondary-color), #34495e);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 1rem 1.5rem;
+        }
+        
+        .card-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        .form-control {
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #dee2e6;
+        }
+        
+        .form-control:focus {
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.25);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #ffd700, #ffc107);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            color: var(--secondary-color);
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #ffc107, #ffb300);
+            transform: translateY(-2px);
+        }
+        
+        .stock-item {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .stock-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stock-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stock-name {
+            font-weight: 600;
+            color: var(--secondary-color);
+            margin-bottom: 0.25rem;
+        }
+        
+        .stock-api {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+        
+        .stock-price {
+            font-weight: 600;
+            color: #28a745;
+        }
+        
+        .btn-delete {
+            color: #dc3545;
+            background: none;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .btn-delete:hover {
+            background: rgba(220, 53, 69, 0.1);
+        }
+        
+        .form-range {
+            height: 6px;
+        }
+        
+        .form-range::-webkit-slider-thumb {
+            background: var(--primary-color);
+        }
+        
+        #clearAllBtn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+        }
+        
+        #clearAllBtn:hover {
+            background: #c82333;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+        
+        .loading {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .nav-pills .nav-link {
+            color: var(--secondary-color);
+            border-radius: 10px;
+            padding: 1rem 2rem;
+            margin: 0 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .nav-pills .nav-link.active {
+            background: linear-gradient(45deg, #ffd700, #ffc107);
+            color: var(--secondary-color);
+        }
+
+        .nav-pills .nav-link:hover:not(.active) {
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .live-data {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            cursor: move;
+            user-select: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .live-data.dragging {
+            opacity: 0.5;
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .live-data.drag-over {
+            border: 2px dashed var(--primary-color);
+        }
+
+        .live-data h3 {
+            color: var(--secondary-color);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .live-data-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+
+        .live-data-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .sensor-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+
+        #currentTime {  
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        #currentDate {
+            font-size: 1.2rem;
+            color: #6c757d;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loadingIndicator">İşleniyor...</div>
+    <div class="container">
+        <h1 class="page-title">Anlık Döviz Takibi</h1>
+
+        <!-- Navigation Pills -->
+        <ul class="nav nav-pills mb-4 justify-content-center" id="mainNav">
+            <li class="nav-item">
+                <a class="nav-link active" href="#dashboard" data-bs-toggle="pill">Ana Sayfa</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#settings" data-bs-toggle="pill">Ayarlar</a>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Dashboard Tab -->
+            <div class="tab-pane fade show active" id="dashboard">
+                <div id="draggableContainer">
+                    <!-- Time Display -->
+                    <div class="live-data" draggable="true" data-box-id="timeBox">
+                        <div id="currentTime">--:--:--</div>
+                        <div id="currentDate">----/--/--</div>
+                    </div>
+
+                    <!-- Weather Display -->
+                    <div class="live-data" draggable="true" data-box-id="weatherBox">
+                        <h3><i class="fas fa-cloud me-2"></i>Hava Durumu</h3>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="live-data-value" id="weatherTemp">--°C</div>
+                                    <div class="live-data-label">Sıcaklık</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="live-data-value" id="weatherHumidity">--%</div>
+                                    <div class="live-data-label">Nem</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="live-data-value" id="weatherDesc">--</div>
+                                    <div class="live-data-label">Durum</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="live-data-value" id="weatherLocation">--</div>
+                                    <div class="live-data-label">Konum</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sensor Data -->
+                    <div class="live-data" draggable="true" data-box-id="sensorBox">
+                        <h3><i class="fas fa-microchip me-2"></i>Sensör Verileri</h3>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>AHT20 Sensörü</h4>
+                                <div class="mb-3">
+                                    <div class="sensor-value" id="ahtTemp">--°C</div>
+                                    <div class="live-data-label">Sıcaklık</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="sensor-value" id="ahtHumidity">--%</div>
+                                    <div class="live-data-label">Nem</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>BMP280 Sensörü</h4>
+                                <div class="mb-3">
+                                    <div class="sensor-value" id="bmpTemp">--°C</div>
+                                    <div class="live-data-label">Sıcaklık</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="sensor-value" id="bmpPressure">-- hPa</div>
+                                    <div class="live-data-label">Basınç</div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="sensor-value" id="bmpAltitude">-- m</div>
+                                    <div class="live-data-label">Yükseklik</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Stocks Display -->
+                    <div class="live-data" draggable="true" data-box-id="stocksBox">
+                        <h3><i class="fas fa-chart-line me-2"></i>Döviz Kurları</h3>
+                        <div id="liveStocksList">
+                            <!-- Live stocks will be listed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="settings">
+                <!-- Add New Stock Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-plus-circle me-2"></i>Yeni Döviz Ekle</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="addStockForm">
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control" id="apiName" placeholder="API Adı (örn: XAU-USD)" required>
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control" id="displayName" placeholder="Görünen Ad (örn: Altın USD)" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-plus me-2"></i>Ekle
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Display Interval Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-clock me-2"></i>Güncelleme Aralığı</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <input type="range" class="form-range" id="intervalSlider" min="5" max="60" step="1">
+                            </div>
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="intervalInput" min="5" max="60">
+                                    <span class="input-group-text">saniye</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Display Settings Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-tv me-2"></i>Görüntüleme Ayarları</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="displaySettingsForm">
+                            <div class="mb-3">
+                                <label class="form-label">Görüntüleme Modu</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="displayMode" id="modeStocksAndWeather" value="stocks_and_weather" checked>
+                                    <label class="form-check-label" for="modeStocksAndWeather">
+                                        Döviz ve Hava Durumunu Göster
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="displayMode" id="modeWeatherOnly" value="weather_only">
+                                    <label class="form-check-label" for="modeWeatherOnly">
+                                        Sadece Hava Durumunu Göster
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="displayMode" id="modeStocksOnly" value="stocks_only">
+                                    <label class="form-check-label" for="modeStocksOnly">
+                                        Sadece Döviz Kurlarını Göster
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="displayMode" id="modeTimeOnly" value="time_only">
+                                    <label class="form-check-label" for="modeTimeOnly">
+                                        Sadece Saati Göster
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Ayarları Kaydet
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Weather Settings Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cloud me-2"></i>Hava Durumu Konumu</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="weatherLocationForm">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control" id="locationName" placeholder="Konum Adı" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control" id="latitude" placeholder="Enlem (örn: 40.2154)" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="text" class="form-control" id="longitude" placeholder="Boylam (örn: 28.9870)" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-save me-2"></i>Kaydet
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Current Stocks Card -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-list me-2"></i>Mevcut Dövizler</h5>
+                        <button class="btn btn-sm" id="clearAllBtn">
+                            <i class="fas fa-trash-alt me-2"></i>Tümünü Temizle
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="stocksList">
+                            <!-- Stocks will be listed here -->
+                            <div class="empty-state" id="emptyState">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>Henüz döviz eklenmemiş</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-info-circle me-2"></i>Hakkında</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <p class="mb-2" style="font-size: 1.1rem;">Mert Güzelmansur tarafından yapılmıştır.</p>
+                        <p class="text-muted" style="font-size: 0.9rem;">2025 Copyrights Hidden</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const emptyState = document.getElementById('emptyState');
+        const draggableContainer = document.getElementById('draggableContainer');
+
+        function showLoading() {
+            loadingIndicator.style.display = 'block';
+            loadingIndicator.textContent = 'İşleniyor...';
+        }
+
+        function hideLoading() {
+            loadingIndicator.style.display = 'none';
+        }
+
+        // Load current configuration
+        async function loadConfig() {
+            try {
+                showLoading();
+                const response = await fetch('/get-config');
+                const config = await response.json();
+                
+                // Update interval
+                document.getElementById('intervalSlider').value = config.displayInterval;
+                document.getElementById('intervalInput').value = config.displayInterval;
+                
+                // Update display mode if available
+                if (config.displayMode) {
+                    document.querySelector(`input[name="displayMode"][value="${config.displayMode}"]`).checked = true;
+                }
+                
+                // Update weather location if available
+                if (config.weatherLat && config.weatherLon) {
+                    document.getElementById('latitude').value = config.weatherLat;
+                    document.getElementById('longitude').value = config.weatherLon;
+                }
+                if (config.weatherLocationName) {
+                    document.getElementById('locationName').value = config.weatherLocationName;
+                }
+                
+                // Update stocks list
+                const stocksList = document.getElementById('stocksList');
+                stocksList.innerHTML = '';
+                
+                if (config.stocks && config.stocks.length > 0) {
+                    emptyState.style.display = 'none';
+                    config.stocks.forEach(stock => {
+                        const stockDiv = document.createElement('div');
+                        stockDiv.className = 'stock-item';
+                        stockDiv.innerHTML = `
+                            <div class="stock-info">
+                                <span class="stock-name">${stock.displayName}</span>
+                                <span class="stock-api">${stock.apiName}</span>
+                            </div>
+                            <button class="btn-delete" onclick="deleteStock('${stock.apiName}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        `;
+                        stocksList.appendChild(stockDiv);
+                    });
+                } else {
+                    emptyState.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading config:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Add new stock
+        document.getElementById('addStockForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const apiName = document.getElementById('apiName').value;
+            const displayName = document.getElementById('displayName').value;
+            
+            try {
+                showLoading();
+                const response = await fetch('/add-stock', {
+                    method: 'POST',
+                    body: JSON.stringify({ apiName, displayName }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to add stock');
+                }
+                
+                // Clear form and reload config
+                document.getElementById('apiName').value = '';
+                document.getElementById('displayName').value = '';
+                await loadConfig();
+            } catch (error) {
+                console.error('Error adding stock:', error);
+                alert('Döviz eklenemedi. Lütfen tekrar deneyin.');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Update interval
+        async function updateInterval(value) {
+            try {
+                showLoading();
+                const response = await fetch('/update-interval', {
+                    method: 'POST',
+                    body: JSON.stringify({ interval: parseInt(value) }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update interval');
+                }
+            } catch (error) {
+                console.error('Error updating interval:', error);
+                alert('Güncelleme aralığı güncellenemedi. Lütfen tekrar deneyin.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Delete stock
+        async function deleteStock(apiName) {
+            if (confirm('Bu dövizi silmek istediğinizden emin misiniz?')) {
+                try {
+                    showLoading();
+                    const response = await fetch('/get-config');
+                    const config = await response.json();
+                    
+                    // Remove the stock from the array
+                    config.stocks = config.stocks.filter(stock => stock.apiName !== apiName);
+                    
+                    // Save the updated config
+                    const saveResponse = await fetch('/save-config', {
+                        method: 'POST',
+                        body: JSON.stringify(config),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    if (!saveResponse.ok) {
+                        throw new Error('Failed to delete stock');
+                    }
+                    
+                    await loadConfig();
+                } catch (error) {
+                    console.error('Error deleting stock:', error);
+                    alert('Döviz silinemedi. Lütfen tekrar deneyin.');
+                } finally {
+                    hideLoading();
+                }
+            }
+        }
+
+        // Clear all stocks
+        document.getElementById('clearAllBtn').addEventListener('click', async () => {
+            if (confirm('Tüm dövizleri silmek istediğinizden emin misiniz?')) {
+                try {
+                    showLoading();
+                    const response = await fetch('/clear-all-stocks', { method: 'POST' });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to clear stocks');
+                    }
+                    
+                    await loadConfig();
+                } catch (error) {
+                    console.error('Error clearing stocks:', error);
+                    alert('Dövizler temizlenemedi. Lütfen tekrar deneyin.');
+                } finally {
+                    hideLoading();
+                }
+            }
+        });
+
+        // Sync interval input and slider
+        document.getElementById('intervalSlider').addEventListener('input', (e) => {
+            document.getElementById('intervalInput').value = e.target.value;
+            updateInterval(e.target.value);
+        });
+
+        document.getElementById('intervalInput').addEventListener('change', (e) => {
+            document.getElementById('intervalSlider').value = e.target.value;
+            updateInterval(e.target.value);
+        });
+
+        // Add this function after other JavaScript functions
+        async function updateStockData(apiName) {
+            try {
+                const response = await fetch(`/get-stock-data?apiName=${encodeURIComponent(apiName)}`);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching stock data:', error);
+                return { price: 0, time: 'Error' };
+            }
+        }
+
+        // Modify the updateLiveData function
+        async function updateLiveData() {
+            try {
+                const response = await fetch('/get-live-data');
+                const data = await response.json();
+                
+                // Update time and weather
+                document.getElementById('currentTime').textContent = data.time;
+                document.getElementById('currentDate').textContent = data.date;
+                
+                // Update weather data
+                if (data.weather) {
+                    document.getElementById('weatherTemp').textContent = `${data.weather.temperature}°C`;
+                    document.getElementById('weatherHumidity').textContent = `${data.weather.humidity}%`;
+                    document.getElementById('weatherDesc').textContent = data.weather.description;
+                    document.getElementById('weatherLocation').textContent = data.weather.location;
+                }
+                
+                // Update sensor data
+                if (data.sensors) {
+                    if (data.sensors.aht) {
+                        document.getElementById('ahtTemp').textContent = `${data.sensors.aht.temperature}°C`;
+                        document.getElementById('ahtHumidity').textContent = `${data.sensors.aht.humidity}%`;
+                    }
+                    if (data.sensors.bmp) {
+                        document.getElementById('bmpTemp').textContent = `${data.sensors.bmp.temperature}°C`;
+                        document.getElementById('bmpPressure').textContent = `${data.sensors.bmp.pressure} hPa`;
+                        document.getElementById('bmpAltitude').textContent = `${data.sensors.bmp.altitude}m`;
+                    }
+                }
+                
+                // Update stocks progressively
+                if (data.stocks) {
+                    const stocksContainer = document.getElementById('liveStocksList');
+                    stocksContainer.innerHTML = ''; // Clear existing stocks
+                    
+                    for (const stock of data.stocks) {
+                        const stockDiv = document.createElement('div');
+                        stockDiv.className = 'mb-3';
+                        stockDiv.innerHTML = `
+                            <div class="live-data-value">$${stock.price}</div>
+                            <div class="live-data-label">${stock.name} (${stock.time})</div>
+                        `;
+                        stocksContainer.appendChild(stockDiv);
+                        
+                        // Fetch stock data asynchronously
+                        updateStockData(stock.apiName).then(stockData => {
+                            if (stockData.price > 0) {
+                                stockDiv.querySelector('.live-data-value').textContent = `$${stockData.price.toFixed(2)}`;
+                                stockDiv.querySelector('.live-data-label').textContent = stockData.time;
+                            } else {
+                                stockDiv.querySelector('.live-data-value').textContent = 'Error';
+                                stockDiv.querySelector('.live-data-label').textContent = 'Failed to fetch';
+                            }
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating live data:', error);
+            }
+        }
+
+        // Update the interval to be more frequent for basic data
+        setInterval(updateLiveData, 5000); // Update every 5 seconds
+        // Initial update
+        updateLiveData();
+
+        // Add weather location form handler
+        document.getElementById('weatherLocationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const locationName = document.getElementById('locationName').value;
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            
+            try {
+                showLoading();
+                const response = await fetch('/update-weather-location', {
+                    method: 'POST',
+                    body: JSON.stringify({ locationName, latitude, longitude }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update weather location');
+                }
+                
+                alert('Hava durumu konumu başarıyla güncellendi!');
+            } catch (error) {
+                console.error('Error updating weather location:', error);
+                alert('Hava durumu konumu güncellenemedi. Lütfen tekrar deneyin.');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Add display settings form handler
+        document.getElementById('displaySettingsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const displayMode = document.querySelector('input[name="displayMode"]:checked').value;
+            
+            try {
+                showLoading();
+                const response = await fetch('/update-display-settings', {
+                    method: 'POST',
+                    body: JSON.stringify({ displayMode }),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update display settings');
+                }
+                
+                alert('Görüntüleme ayarları başarıyla güncellendi!');
+            } catch (error) {
+                console.error('Error updating display settings:', error);
+                alert('Görüntüleme ayarları güncellenemedi. Lütfen tekrar deneyin.');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Save the order of boxes to localStorage
+        function saveBoxOrder() {
+            const boxes = Array.from(draggableContainer.children);
+            const order = boxes.map(box => box.dataset.boxId);
+            localStorage.setItem('boxOrder', JSON.stringify(order));
+        }
+
+        // Load and apply the saved box order
+        function loadBoxOrder() {
+            const savedOrder = localStorage.getItem('boxOrder');
+            if (savedOrder) {
+                const order = JSON.parse(savedOrder);
+                const boxes = Array.from(draggableContainer.children);
+                
+                // Sort the boxes according to the saved order
+                boxes.sort((a, b) => {
+                    return order.indexOf(a.dataset.boxId) - order.indexOf(b.dataset.boxId);
+                });
+                
+                // Reappend the boxes in the correct order
+                boxes.forEach(box => draggableContainer.appendChild(box));
+            }
+        }
+
+        // Initialize drag and drop functionality
+        function initDragAndDrop() {
+            const draggables = document.querySelectorAll('.live-data');
+            
+            draggables.forEach(draggable => {
+                draggable.addEventListener('dragstart', (e) => {
+                    draggable.classList.add('dragging');
+                });
+
+                draggable.addEventListener('dragend', (e) => {
+                    draggable.classList.remove('dragging');
+                    saveBoxOrder();
+                });
+
+                draggable.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const dragging = document.querySelector('.dragging');
+                    const afterElement = getDragAfterElement(draggableContainer, e.clientY);
+                    
+                    if (afterElement == null) {
+                        draggableContainer.appendChild(dragging);
+                    } else {
+                        draggableContainer.insertBefore(dragging, afterElement);
+                    }
+                });
+
+                draggable.addEventListener('dragenter', (e) => {
+                    e.preventDefault();
+                    if (!e.target.classList.contains('dragging')) {
+                        e.target.closest('.live-data').classList.add('drag-over');
+                    }
+                });
+
+                draggable.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    if (!e.target.classList.contains('dragging')) {
+                        e.target.closest('.live-data').classList.remove('drag-over');
+                    }
+                });
+
+                draggable.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.target.closest('.live-data').classList.remove('drag-over');
+                });
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.live-data:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // Initialize drag and drop when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initDragAndDrop();
+            loadBoxOrder();
+        });
+    </script>
+</body>
+</html>
